@@ -10,15 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@chengsokdara/use-whisper": "^0.2.0",
+    "@chengsokdara/react-hooks-async": "^0.0.2",
     "@clerk/clerk-react": "^5.2.10",
+    "@ffmpeg/ffmpeg": "^0.11.6",
+    "axios": "^1.7.4",
+    "hark": "^1.2.3",
+    "lamejs": "github:zhuker/lamejs",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.25.1"
+    "react-router-dom": "^6.25.1",
+    "recordrtc": "^5.6.2"
   },
   "devDependencies": {
+    "@types/hark": "^1.2.5",
+    "@types/node": "^22.4.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@types/recordrtc": "^5.6.14",
     "@typescript-eslint/eslint-plugin": "^7.13.1",
     "@typescript-eslint/parser": "^7.13.1",
     "@vitejs/plugin-react": "^4.3.1",

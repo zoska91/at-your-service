@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useUser } from '../hooks/useUser';
 import { useEffect } from 'react';
+import Speaker from '../components/speaker/Speaker';
 
 const ChatPage = () => {
   const { isLogin, checkUser } = useUser();
@@ -11,7 +12,12 @@ const ChatPage = () => {
 
   if (!isLogin) return <Navigate to='/chat' />;
 
-  return <div>chat</div>;
+  return (
+    <div>
+      chat
+      <Speaker />
+    </div>
+  );
 };
 
 export default ChatPage;

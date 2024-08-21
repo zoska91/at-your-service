@@ -8,15 +8,11 @@ export const endpoints = {
   createUser: 'user/create',
 
   message: 'chat/message',
+  whisper: 'chat/whisper',
   getKey: 'chat/get-key',
 };
 
 const API_BASE_URL = 'http://localhost:9000/api';
-
-const headers = {
-  Accept: 'application/json',
-  'Content-Type': 'application/json',
-};
 
 const useApi = () => {
   const { getToken } = useAuth();
@@ -25,11 +21,12 @@ const useApi = () => {
 
   const getHeaders = async (isForm = false): Promise<HeadersType> => {
     const token = await getToken();
-    const formHeader = isForm ? { 'Content-Type': 'multipart/form-data' } : null;
+    const contentTypeHeader = isForm ? null : { 'Content-Type': 'multipart/form-data' };
+
     return {
-      ...headers,
+      Accept: 'application/json',
       Authorization: `Bearer ${token}`,
-      ...formHeader,
+      ...contentTypeHeader,
     };
   };
 
@@ -42,7 +39,7 @@ const useApi = () => {
     };
 
     if (body) {
-      fetchOptions.body = body instanceof FormData ? body : JSON.stringify(body);
+      fetchOptions.body = isForm ? body : JSON.stringify(body);
     }
 
     const resp = await fetch(getUrl(url), fetchOptions);
@@ -61,7 +58,8 @@ const useApi = () => {
     return request(`${url}?${searchParams}`, 'GET');
   };
 
-  const post = async (url: string, body: any) => request(url, 'POST', body);
+  const post = async (url: string, body: any, isForm?: boolean) =>
+    request(url, 'POST', body, isForm);
 
   const put = async (url: string, body: any) => request(url, 'PUT', body);
 
