@@ -7,6 +7,9 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Publishable Key');
 }
 
+// TODO layouts to use
+// https://ant.design/components/layout
+
 export default function RootLayout() {
   const navigate = useNavigate();
 
