@@ -1,4 +1,5 @@
 import { useAuth } from '@clerk/clerk-react';
+import { useUser } from '../hooks/useUser';
 
 interface HeadersType {
   [key: string]: string;
@@ -6,36 +7,61 @@ interface HeadersType {
 
 export const endpoints = {
   createUser: 'user/create',
-
   message: 'chat/message',
   whisper: 'chat/whisper',
-  getKey: 'chat/get-key',
+  getOpenaiApiKey: 'user/get-openai-api-key',
+  addOpenaiApiKey: 'user/add-openai-api-key',
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+interface RequestOptions {
+  url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  body?: any;
+  isForm?: boolean;
+  addOpenaiApiKey?: boolean;
+}
 
 const useApi = () => {
   const { getToken } = useAuth();
 
   const getUrl = (url: string) => `${API_BASE_URL}/${url}`;
-
-  const getHeaders = async (isForm = false): Promise<HeadersType> => {
-    const token = await getToken();
-    const contentTypeHeader = isForm ? null : { 'Content-Type': 'multipart/form-data' };
-
-    return {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...contentTypeHeader,
-    };
+  const getOpenaiApiKey = async () => {
+    const { openaiApiKey } = await get({ url: endpoints.getOpenaiApiKey });
+    return openaiApiKey;
   };
 
-  const request = async (url: string, method: string, body: any = null, isForm = false) => {
-    const headers = await getHeaders(isForm);
+  const getHeaders = async ({
+    isForm,
+    addOpenaiApiKey,
+  }: Pick<RequestOptions, 'isForm' | 'addOpenaiApiKey'>): Promise<HeadersType> => {
+    const cookies = document.cookie;
+    const token = await getToken();
 
+    const headers: HeadersType = {
+      Cookie: cookies,
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    };
+
+    if (!isForm) headers['Content-Type'] = 'application/json';
+
+    if (addOpenaiApiKey) {
+      const apiKey = await getOpenaiApiKey();
+      if (apiKey) headers['openai-api-key'] = apiKey;
+    }
+
+    return headers;
+  };
+
+  const request = async (options: RequestOptions) => {
+    const { url, method, body, isForm, addOpenaiApiKey } = options;
+    const headers = await getHeaders({ isForm, addOpenaiApiKey });
     const fetchOptions: RequestInit = {
       method,
       headers,
+      credentials: 'include',
     };
 
     if (body) {
@@ -53,17 +79,21 @@ const useApi = () => {
     return json;
   };
 
-  const get = async (url: string, params: Record<string, any> = {}) => {
-    const searchParams = new URLSearchParams(params).toString();
-    return request(`${url}?${searchParams}`, 'GET');
+  const get = async (options: Omit<RequestOptions, 'method'>) => {
+    return request({ ...options, method: 'GET' });
   };
 
-  const post = async (url: string, body: any, isForm?: boolean) =>
-    request(url, 'POST', body, isForm);
+  const post = async (options: Omit<RequestOptions, 'method'>) => {
+    return request({ ...options, method: 'POST' });
+  };
 
-  const put = async (url: string, body: any) => request(url, 'PUT', body);
+  const put = async (options: Omit<RequestOptions, 'method'>) => {
+    return request({ ...options, method: 'PUT' });
+  };
 
-  const deleteRequest = async (url: string) => request(url, 'DELETE');
+  const deleteRequest = async (options: Omit<RequestOptions, 'method'>) => {
+    return request({ ...options, method: 'DELETE' });
+  };
 
   return { get, post, put, delete: deleteRequest };
 };

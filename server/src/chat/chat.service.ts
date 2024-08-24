@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as FormData from 'form-data';
 import fetch from 'node-fetch';
 
@@ -8,11 +7,9 @@ export const whisperApiEndpoint =
 
 @Injectable()
 export class ChatService {
-  constructor(private configService: ConfigService) {}
+  constructor() {}
 
-  async whisper(file: Express.Multer.File) {
-    const apiKey = this.configService.get<string>('OPENAI_API_TOKEN');
-
+  async whisper(file: Express.Multer.File, openaiApiKey: string) {
     const formData = new FormData();
 
     formData.append('file', file.buffer, {
@@ -23,7 +20,7 @@ export class ChatService {
     formData.append('language', 'en');
 
     const headers = {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${openaiApiKey}`,
     };
 
     const response = await fetch(whisperApiEndpoint, {
