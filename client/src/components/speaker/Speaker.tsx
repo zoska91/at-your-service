@@ -9,7 +9,12 @@ const Speaker = () => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await post(endpoints.whisper, formData, true);
+    const response = await post({
+      url: endpoints.whisper,
+      body: formData,
+      isForm: true,
+      addOpenaiApiKey: true,
+    });
 
     return {
       blob,

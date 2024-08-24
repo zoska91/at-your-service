@@ -1,5 +1,4 @@
 import { useAuth } from '@clerk/clerk-react';
-import { useUser } from '../hooks/useUser';
 
 interface HeadersType {
   [key: string]: string;
