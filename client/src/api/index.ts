@@ -7,7 +7,9 @@ interface HeadersType {
 export const endpoints = {
   createUser: 'user/create',
   message: 'chat/message',
-  whisper: 'chat/whisper',
+  // whisper: 'chat/whisper',
+  chatAudio: 'chat/chat-audio',
+
   getOpenaiApiKey: 'user/get-openai-api-key',
   addOpenaiApiKey: 'user/add-openai-api-key',
 };
@@ -20,6 +22,7 @@ interface RequestOptions {
   body?: any;
   isForm?: boolean;
   addOpenaiApiKey?: boolean;
+  isStreaming?: boolean;
 }
 
 const useApi = () => {
@@ -68,10 +71,18 @@ const useApi = () => {
     }
 
     const resp = await fetch(getUrl(url), fetchOptions);
-
     if (!resp.ok) {
       const error = { message: 'Request failed', status: resp.status, url };
       throw error;
+    }
+
+    if (options.isStreaming) {
+      const reader = resp.body?.getReader();
+      if (reader) {
+        return reader;
+      } else {
+        console.error('Failed to get reader');
+      }
     }
 
     const json = await resp.json();
