@@ -4,46 +4,54 @@ import {
   Controller,
   Get,
   Headers,
+  NotFoundException,
   Post,
+  Req,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { HumanMessage } from '@langchain/core/messages';
 
 import { ChatService } from './chat.service';
-import { Response } from 'express';
+import { ClerkAuthGuard } from 'src/utils/clerk-auth.guard';
 
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Post('/whisper')
+  @UseGuards(ClerkAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async whisper(
+    @Req() req: Request & { userId: string },
     @UploadedFile() whisperDto: Express.Multer.File,
-    @Headers('openai-api-key') openaiApiKey: string,
   ) {
-    if (!openaiApiKey)
-      throw new BadRequestException('openai API key is required');
+    const userId = req.userId;
+    if (!userId) throw new NotFoundException('User not found');
+    await this.chatService.setOpenaiApiKey(userId);
 
-    const text = await this.chatService.whisper(whisperDto, openaiApiKey);
+    const text = await this.chatService.whisper(whisperDto);
     return text;
   }
 
   @Get('/text-to-audio')
+  @UseGuards(ClerkAuthGuard)
   async streamAudio(
-    @Body('text') text: string,
+    @Req() req: Request & { userId: string },
     @Res() res: Response,
-    @Headers('openai-api-key') openaiApiKey: string,
+    @Body('text') text: string,
   ) {
     try {
-      if (!openaiApiKey)
-        throw new BadRequestException('openai API key is required');
+      const userId = req.userId;
+      if (!userId) throw new NotFoundException('User not found');
+      await this.chatService.setOpenaiApiKey(userId);
 
       const messages = [new HumanMessage(text)];
-      await this.chatService.answerStream(messages, openaiApiKey, res);
+      await this.chatService.answerStream(messages, res);
     } catch (error) {
       console.error('Error streaming audio:', error);
       res.status(500).send('Error generating audio');
@@ -51,20 +59,22 @@ export class ChatController {
   }
 
   @Post('/chat-audio')
+  @UseGuards(ClerkAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async chatAudio(
-    @UploadedFile() whisperDto: Express.Multer.File,
+    @Req() req: Request & { userId: string },
     @Res() res: Response,
-    @Headers('openai-api-key') openaiApiKey: string,
+    @UploadedFile() whisperDto: Express.Multer.File,
   ) {
     try {
-      if (!openaiApiKey)
-        throw new BadRequestException('openai API key is required');
+      const userId = req.userId;
+      if (!userId) throw new NotFoundException('User not found');
+      await this.chatService.setOpenaiApiKey(userId);
 
-      const { text } = await this.chatService.whisper(whisperDto, openaiApiKey);
+      const { text } = await this.chatService.whisper(whisperDto);
       const messages = await this.chatService.prepareMessages(text);
 
-      this.chatService.answerStream(messages, openaiApiKey, res);
+      this.chatService.answerStream(messages, res);
     } catch (error) {
       console.error('Error streaming audio:', error);
       res.status(500).send('Error generating audio');
@@ -72,18 +82,22 @@ export class ChatController {
   }
 
   @Post('/message')
+  @UseGuards(ClerkAuthGuard)
   async chat(
     @Res() res: Response,
-    @Headers('openai-api-key') openaiApiKey: string,
-    @Body('chat') body: any,
+    @Req() req: Request & { userId: string },
+    @Body('userMsg') userMsg: string,
   ) {
-    if (!openaiApiKey)
-      throw new BadRequestException('openai API key is required');
-    const { userMsg } = body;
+    const userId = req.userId;
+    if (!userId) throw new NotFoundException('User not found');
+    await this.chatService.setOpenaiApiKey(userId);
+    console.log(userMsg);
 
-    const messages = await this.chatService.prepareMessages(userMsg);
+    const messages = await this.chatService.prepareMessages({
+      userMsg,
+    });
 
-    const answer = this.chatService.answerText(messages, openaiApiKey);
+    const answer = this.chatService.answerText(messages);
     return res.json({ answer });
   }
 }

@@ -10,15 +10,25 @@ import * as FormData from 'form-data';
 import { ActionTypesService } from '../db/actionTypes/actionTypes.service';
 import { MessagesType } from 'types';
 import { parseFunctionCall } from 'src/helpers/openai';
+import { UserService } from '../user/user.service';
 
 export const whisperApiEndpoint =
   'https://api.openai.com/v1/audio/transcriptions';
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly actionTypesService: ActionTypesService) {}
+  private openaiApiKey: string;
 
-  async whisper(file: Express.Multer.File, openaiApiKey: string) {
+  constructor(
+    private readonly actionTypesService: ActionTypesService,
+    private readonly userService: UserService,
+  ) {}
+
+  async setOpenaiApiKey(userId: string): Promise<void> {
+    this.openaiApiKey = await this.userService.getOpenaiApiKey(userId);
+  }
+
+  async whisper(file: Express.Multer.File) {
     const formData = new FormData();
 
     formData.append('file', file.buffer, {
@@ -29,7 +39,7 @@ export class ChatService {
     formData.append('language', 'en');
 
     const headers = {
-      Authorization: `Bearer ${openaiApiKey}`,
+      Authorization: `Bearer ${this.openaiApiKey}`,
     };
 
     const response = await fetch(whisperApiEndpoint, {
@@ -43,15 +53,11 @@ export class ChatService {
     return text;
   }
 
-  async answerStream(
-    messages: MessagesType,
-    openaiApiKey: string,
-    res: Response,
-  ): Promise<void> {
+  async answerStream(messages: MessagesType, res: Response): Promise<void> {
     const modelSettings = {
       modelName: 'gpt-4o-mini',
       temperature: 0.7,
-      apiKey: openaiApiKey,
+      apiKey: this.openaiApiKey,
       streaming: true,
     };
 
@@ -76,13 +82,13 @@ export class ChatService {
     await chat.invoke(messages, configuration);
   }
 
-  async answerText(messages: MessagesType, openaiApiKey: string) {
+  async answerText(messages: MessagesType) {
     const parser = new StringOutputParser();
 
     const modelSettings = {
       modelName: 'gpt-4o-mini',
       temperature: 0.7,
-      apiKey: openaiApiKey,
+      apiKey: this.openaiApiKey,
     };
     const model = new ChatOpenAI(modelSettings);
 
@@ -92,6 +98,7 @@ export class ChatService {
   }
 
   async prepareMessages({ userMsg }: { userMsg: string }) {
+    console.log(2, userMsg, this.openaiApiKey);
     const currentActionType = this.getActionType(userMsg);
 
     return [new HumanMessage(userMsg)];
@@ -101,6 +108,7 @@ export class ChatService {
     const modelSettings = {
       modelName: 'gpt-4o-mini',
       temperature: 0.7,
+      apiKey: this.openaiApiKey,
     };
 
     const actionTypes = this.actionTypesService.findAll();
