@@ -43,7 +43,7 @@ export class ChatController {
         throw new BadRequestException('openai API key is required');
 
       const messages = [new HumanMessage(text)];
-      await this.chatService.textToAudioStream(messages, openaiApiKey, res);
+      await this.chatService.answerStream(messages, openaiApiKey, res);
     } catch (error) {
       console.error('Error streaming audio:', error);
       res.status(500).send('Error generating audio');
@@ -62,12 +62,28 @@ export class ChatController {
         throw new BadRequestException('openai API key is required');
 
       const { text } = await this.chatService.whisper(whisperDto, openaiApiKey);
-      const messages = [new HumanMessage(text)];
+      const messages = await this.chatService.prepareMessages(text);
 
-      this.chatService.textToAudioStream(messages, openaiApiKey, res);
+      this.chatService.answerStream(messages, openaiApiKey, res);
     } catch (error) {
       console.error('Error streaming audio:', error);
       res.status(500).send('Error generating audio');
     }
+  }
+
+  @Post('/message')
+  async chat(
+    @Res() res: Response,
+    @Headers('openai-api-key') openaiApiKey: string,
+    @Body('chat') body: any,
+  ) {
+    if (!openaiApiKey)
+      throw new BadRequestException('openai API key is required');
+    const { userMsg } = body;
+
+    const messages = await this.chatService.prepareMessages(userMsg);
+
+    const answer = this.chatService.answerText(messages, openaiApiKey);
+    return res.json({ answer });
   }
 }

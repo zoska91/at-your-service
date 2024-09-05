@@ -16,15 +16,43 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 10340
           script: |
+            set -e  # Exit on any error
+
+            # Function to handle errors
+            handle_error() {
+              echo "Error occurred at line $1"
+              exit 1
+            }
+
+            # Trap errors
+            trap 'handle_error $LINENO' ERR
+
+            echo "Navigating to the application directory"
             cd ~/apps/at-your-service
+
+            echo "Fetching latest code from origin"
             git fetch origin
+
+            echo "Pulling the latest changes from master"
             git pull origin master
+
+            echo "Checking the status of the repository"
             git status
 
+            echo "Navigating to the client directory"
             cd ~/apps/at-your-service/client
+
+            echo "Installing npm dependencies"
             npm install
+
+            echo "Building the client application"
             npm run build
 
+            echo "Navigating to the server directory"
             cd ~/apps/at-your-service/server
+
+            echo "Installing npm dependencies for the server"
             npm install
+
+            echo "Restarting the server"
             pm2 restart atYourService

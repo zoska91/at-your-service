@@ -3,8 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
-import { ChatModule } from 'src/chat/chat.module';
-import { UserModule } from 'src/user/user.module';
+import { UserModule } from './user/user.module';
+import { DatabaseModule } from 'db/database.module';
+import { ChatModule } from './chat/chat.module';
+import { ActionTypesModule } from './db/actionTypes/actionTypes.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { UserModule } from 'src/user/user.module';
     }),
     UserModule,
     ChatModule,
+    DatabaseModule,
+    ActionTypesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
