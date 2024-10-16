@@ -31,7 +31,7 @@ const ChatPage = () => {
     const message = messageRef.current.value;
 
     try {
-      await post({ url: endpoints.message, body: { message } });
+      await post({ url: endpoints.message, body: { userMsg: message }, addOpenaiApiKey: true });
     } catch (error) {
       console.error('Failed to save API key', error);
     }
@@ -41,9 +41,9 @@ const ChatPage = () => {
     <div>
       chat
       <Speaker />
-      <form onSubmit={handleSubmit}>
+      {/* <form onSubmit={handleSubmit}>
         <input name='openai-api-key' ref={apiKeyRef} required />
-      </form>
+      </form> */}
       <form onSubmit={handleSendMessage}>
         <input name='message' ref={messageRef} required />
       </form>

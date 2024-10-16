@@ -11,6 +11,7 @@ import { ActionTypesService } from '../db/actionTypes/actionTypes.service';
 import { MessagesType } from 'types';
 import { parseFunctionCall } from 'src/helpers/openai';
 import { UserService } from '../user/user.service';
+import { intentionSchema } from 'src/prompts/actionType';
 
 export const whisperApiEndpoint =
   'https://api.openai.com/v1/audio/transcriptions';
@@ -99,8 +100,8 @@ export class ChatService {
 
   async prepareMessages({ userMsg }: { userMsg: string }) {
     console.log(2, userMsg, this.openaiApiKey);
-    const currentActionType = this.getActionType(userMsg);
-
+    const currentActionType = await this.getActionType(userMsg);
+    console.log({ currentActionType });
     return [new HumanMessage(userMsg)];
   }
 
@@ -118,11 +119,13 @@ export class ChatService {
     ];
 
     const chat = new ChatOpenAI(modelSettings).bind({
-      functions: [...intentionSchema],
+      functions: [intentionSchema],
       function_call: { name: 'describe_intention' } || undefined,
     });
+    console.log({ chat });
 
     const result = await chat.invoke(messages);
+    console.log({ result });
     const intent = { ...parseFunctionCall(result) };
     console.log(intent);
     return intent;
